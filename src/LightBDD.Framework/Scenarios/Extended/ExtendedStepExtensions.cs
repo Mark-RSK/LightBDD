@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -62,6 +63,15 @@ namespace LightBDD.Framework.Scenarios.Extended
         public static ICompositeStepBuilder<TContext> AddSteps<TContext>(this ICompositeStepBuilder<TContext> builder, params Expression<Action<TContext>>[] steps)
         {
             AsExtended(builder).AddSteps(steps);
+            return builder;
+        }
+
+        public static ICompositeStepBuilder<NoContext> RepeatStep<TArgument>(
+            this ICompositeStepBuilder<NoContext> builder,
+            IEnumerable<TArgument> arguments,
+            Expression<Action<TArgument>> step)
+        {
+            AsExtended(builder).AddRepeatedStep(arguments, step);
             return builder;
         }
 

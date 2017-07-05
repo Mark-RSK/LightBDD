@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -28,6 +29,30 @@ namespace LightBDD.Framework.Scenarios.Extended.Implementation
             var arguments = ProcessArguments(methodExpression, contextParameter);
 
             return new StepDescriptor(GetStepTypeName(contextParameter), methodExpression.Method.Name, CompileStepAction(methodExpression, contextParameter), arguments);
+        }
+
+        public IEnumerable<StepDescriptor> ToRepeatedStep<T>(IEnumerable<T> arguments, Expression<Action<T>> step)
+        {
+            var baseDescriptor = new ExtendedStepCompiler<T>(_configuration).ToStep(step);
+            return arguments.Select(argument => RewriteStepDescriptor(baseDescriptor, argument));
+        }
+
+        private StepDescriptor RewriteStepDescriptor<T>(StepDescriptor baseDescriptor, T argument)
+        {
+            return new StepDescriptor(
+                baseDescriptor.PredefinedStepType,
+                baseDescriptor.RawName,
+                (ctx, args) => baseDescriptor.StepInvocation(argument, args),
+                baseDescriptor.Parameters.Select(p => RewriteParameter(p, argument)).ToArray());
+        }
+
+        private ParameterDescriptor RewriteParameter(ParameterDescriptor baseParameter, object argument)
+        {
+            return baseParameter.IsConstant
+                ? baseParameter
+                : ParameterDescriptor.FromInvocation(
+                    baseParameter.ParameterInfo,
+                    ctx => baseParameter.ValueEvaluator(argument));
         }
 
         private string GetStepTypeName(ParameterExpression contextParameter)

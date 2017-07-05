@@ -31,6 +31,25 @@ namespace LightBDD.Framework.UnitTests.Scenarios.Extended
         }
 
         [Test]
+        public async Task It_should_run_grouped_repeated_steps()
+        {
+            ExpectSynchronousScenarioRun();
+
+            Runner.RunScenario(_ => Repeated_step_group());
+
+            Assert.That(CapturedSteps, Is.Not.Null);
+            Assert.That(CapturedSteps.Length, Is.EqualTo(1));
+            Assert.That(CapturedSteps[0].RawName, Is.EqualTo(nameof(Repeated_step_group)));
+
+            var result = (CompositeStepResultDescriptor)await CapturedSteps[0].StepInvocation.Invoke(null, null);
+            var subSteps = result.SubSteps.ToArray();
+            Assert.That(subSteps.Length, Is.EqualTo(3));
+            AssertStep(subSteps[0], nameof(Then_sum_of_X_and_Y_should_be_VALUE), null, ("x", 5), ("y", 7), ("value", 12));
+            AssertStep(subSteps[1], nameof(Then_sum_of_X_and_Y_should_be_VALUE), null, ("x", 2), ("y", 3), ("value", 5));
+            AssertStep(subSteps[2], nameof(Then_sum_of_X_and_Y_should_be_VALUE), null, ("x", -5), ("y", 2), ("value", -3));
+        }
+
+        [Test]
         public async Task It_should_run_grouped_async_steps()
         {
             ExpectAsynchronousScenarioRun();
@@ -76,6 +95,23 @@ namespace LightBDD.Framework.UnitTests.Scenarios.Extended
                     _ => Step_one(),
                     _ => Step_two())
                 .Build();
+        }
+
+        private CompositeStep Repeated_step_group()
+        {
+            var expectations = new[] {
+                (x: 5, y: 7, sum: 12),
+                (x: 2, y: 3, sum: 5),
+                (x: -5, y: 2, sum: -3)
+            };
+            return new TestableCompositeStepBuilder()
+                .RepeatStep(expectations, a => Then_sum_of_X_and_Y_should_be_VALUE(a.x, a.y, a.sum))
+                .Build();
+        }
+
+        private void Then_sum_of_X_and_Y_should_be_VALUE(int x, int y, int value)
+        {
+            throw new Exception(nameof(Then_sum_of_X_and_Y_should_be_VALUE));
         }
     }
 }

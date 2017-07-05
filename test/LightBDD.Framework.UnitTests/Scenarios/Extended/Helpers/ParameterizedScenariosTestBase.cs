@@ -20,7 +20,7 @@ namespace LightBDD.Framework.UnitTests.Scenarios.Extended.Helpers
         {
             CapturedSteps = null;
             MockScenarioRunner = new Mock<IScenarioRunner>();
-            Runner = new MockBddRunner<T>(TestableIntegrationContextBuilder.Default().Build().Configuration,MockScenarioRunner.Object);
+            Runner = new MockBddRunner<T>(TestableIntegrationContextBuilder.Default().Build().Configuration, MockScenarioRunner.Object);
         }
 
         protected void ExpectSynchronousScenarioRun()
@@ -77,13 +77,13 @@ namespace LightBDD.Framework.UnitTests.Scenarios.Extended.Helpers
             MockScenarioRunner.VerifyAll();
         }
 
-        protected void AssertStep(StepDescriptor step, string expectedName, string expectedPredefinedStepType = null)
+        protected void AssertStep(StepDescriptor step, string expectedName, string expectedPredefinedStepType = null, params (string name, object value)[] parameters)
         {
             Assert.That(step.RawName, Is.EqualTo(expectedName), nameof(step.RawName));
-            Assert.That(step.Parameters, Is.Empty, nameof(step.Parameters));
             Assert.That(step.PredefinedStepType, Is.EqualTo(expectedPredefinedStepType), nameof(step.PredefinedStepType));
+            Assert.That(step.Parameters.Select(p => (name: p.RawName, value: p.ValueEvaluator(null))).ToArray(), Is.EqualTo(parameters), nameof(step.Parameters));
 
-            var ex = Assert.Throws<Exception>(() => step.StepInvocation.Invoke(null, null).GetAwaiter().GetResult());
+            var ex = Assert.Throws<Exception>(() => step.StepInvocation.Invoke(null, step.Parameters.Select(x => x.ValueEvaluator(null)).ToArray()).GetAwaiter().GetResult());
             Assert.That(ex.Message, Is.EqualTo(expectedName));
         }
     }

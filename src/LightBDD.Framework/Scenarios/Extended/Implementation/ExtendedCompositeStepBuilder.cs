@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -33,6 +34,11 @@ namespace LightBDD.Framework.Scenarios.Extended.Implementation
         public void AddSteps(Expression<Action<TContext>>[] steps)
         {
             _builder.AddSteps(steps.Select(_stepCompiler.ToStep));
+        }
+
+        public void AddRepeatedStep<T>(IEnumerable<T> arguments, Expression<Action<T>> step)
+        {
+            _builder.AddSteps(_stepCompiler.ToRepeatedStep(arguments, step));
         }
     }
 }
